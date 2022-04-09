@@ -11,6 +11,7 @@ from optional_pane import EnhanceSliderWindow
 import tempfile
 import shutil
 import random
+from mask import Paint
 
 
 CONFIG_FILE = "config.json"
@@ -40,7 +41,6 @@ class PyPhotoEditor:
         self.image_tabs.enable_traversal()
         # self.root.bind("<Escape>,", self._close)
         self.root.protocol("WM_DELETE_WINDOW", self._close)
-        # os.mkdir("tmp")
 
         if not os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE, "w") as f:
@@ -88,7 +88,6 @@ class PyPhotoEditor:
 
         setup_menu = Menu(menu_bar, tearoff=0)
         crop_menu = Menu(setup_menu, tearoff=0)
-        # setup_menu.add_command(label="Изменить размер...", command=self.resize_current_image)
         crop_menu.add_command(label="Выделить", command=self.start_crop_selection_of_current_image)
         crop_menu.add_command(label="Сбросить выделение", command=self.cancel_selection)
         crop_menu.add_command(label="Обрезать", command=self.crop_selection_of_current_image)
@@ -120,6 +119,7 @@ class PyPhotoEditor:
         filter_menu.add_command(label="Акварельная краска", command=lambda: self.filter_current_image("water_color"))
 
         enhance_menu.add_cascade(label="Стилизация", menu=filter_menu)
+        enhance_menu.add_command(label="Ретушь", command=self.paint_on_image)
 
         menu_bar.add_cascade(label="Изображение", menu=setup_menu)
         menu_bar.add_cascade(label="Настройка", menu=enhance_menu)
@@ -132,10 +132,6 @@ class PyPhotoEditor:
         self.open_recent_menu.delete(0, "end")
         for path in self.last_viewed_images:
             self.open_recent_menu.add_command(label=path, command=lambda x=path: self.add_new_image(x))
-
-    # def update_cancel_change(self):
-    #     if len(self.temp_images) > 0:
-
 
     def draw_widgets(self):
         self.image_tabs.pack(fill="both", expand=1)
@@ -377,6 +373,13 @@ class PyPhotoEditor:
         image.unsaved = True
         self.update_image_inside_app(image)
 
+    def paint_on_image(self):
+        image = self.current_image()
+        if not image:
+            return
+        Paint(self.temp_dir)
+        image.unsaved = False
+
     def save_images_to_config(self):
         paths = [info.full_path(no_star=True) for info in self.opened_images]
         images = {"opened_images": paths, "last_viewed_images": self.last_viewed_images}
@@ -397,7 +400,7 @@ class PyPhotoEditor:
         # self.temp_dir.cleanup()
         shutil.rmtree(self.temp_dir)
         # shutil.rmtree("tmp")
-        self.root.quit()
+        self.root.destroy()
 
 
 if __name__ == "__main__":

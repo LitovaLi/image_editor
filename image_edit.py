@@ -122,6 +122,20 @@ class ImageEdit:
 
         self._bind_crop()
 
+    def start_paint(self):
+        self._unbind_zoom()
+
+        bbox = self.canvas.bbox(self.image_container)
+        self.crop_selection = Rect(*bbox, side_offset=5)
+
+        self.sel_rect = self.canvas.create_rectangle(
+            *self.crop_selection.coordinates,
+            dash=(10, 10), outline="blue",
+            width=2
+        )
+
+        self._bind_crop()
+
     def _bind_crop(self):
         self.canvas.bind("<Motion>", self._change_crop_cursor)
         self.canvas.bind("<B1-Motion>", self._move_crop_side)
