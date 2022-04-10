@@ -119,7 +119,12 @@ class PyPhotoEditor:
         filter_menu.add_command(label="Акварельная краска", command=lambda: self.filter_current_image("water_color"))
 
         enhance_menu.add_cascade(label="Стилизация", menu=filter_menu)
-        enhance_menu.add_command(label="Ретушь", command=self.paint_on_image)
+
+        inpaint_menu = Menu(enhance_menu, tearoff=0)
+        inpaint_menu.add_command(label="Создать маску", command=self.paint_on_image)
+        inpaint_menu.add_command(label="Выполнить", command=self.inpaint_current_image)
+
+        enhance_menu.add_cascade(label="Убрать объект", menu=inpaint_menu)
 
         menu_bar.add_cascade(label="Изображение", menu=setup_menu)
         menu_bar.add_cascade(label="Настройка", menu=enhance_menu)
@@ -377,8 +382,29 @@ class PyPhotoEditor:
         image = self.current_image()
         if not image:
             return
-        Paint(self.temp_dir)
-        image.unsaved = False
+        # mb.showinfo("Информация", "Объекты, которые хотите удалить, закрасьте белым цветом. Все светлые участки на изображении закрасьте черным")
+        Paint(self.temp_dir, image.full_path(no_star=True))
+
+    def create_mask(self):
+        pre_mask = cv2.imread(os.path.join(self.temp_dir, "mask.jpg"), cv2.IMREAD_COLOR)
+        im_gray = cv2.cvtColor(pre_mask, cv2.COLOR_BGR2GRAY)
+        _, pre_mask = cv2.threshold(im_gray, thresh=180, maxval=255, type=cv2.THRESH_BINARY)
+        mask = cv2.bitwise_and(im_gray, pre_mask)
+        cv2.imwrite(os.path.join(self.temp_dir, "mask.jpg"), mask)
+
+    def inpaint_current_image(self):
+        if os.path.exists(os.path.join(self.temp_dir, "mask.jpg")):
+            self.create_mask()
+            image = self.current_image()
+            if not image:
+                return
+            self.save_temp_image()
+            image.inpaint(self.temp_dir)
+            image.unsaved = True
+            self.update_image_inside_app(image)
+            image.delete_temp_file(os.path.join(self.temp_dir, "mask.jpg"))
+        else:
+            mb.showerror("Ошибка операции", "Маска для изображения не найдена")
 
     def save_images_to_config(self):
         paths = [info.full_path(no_star=True) for info in self.opened_images]

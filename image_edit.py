@@ -105,6 +105,11 @@ class ImageEdit:
             gaus_blur = cv2.GaussianBlur(self.image, (5, 5), 0)
             self.image = gaus_blur
 
+    def inpaint(self, temp_dir):
+        mask = cv2.imread(os.path.join(temp_dir, "mask.jpg"), 0)
+        image = cv2.inpaint(self.image, mask, 10, cv2.INPAINT_TELEA)
+        self.image = image
+
     def start_crop_sel(self):
         self._unbind_zoom()
         if self.crop_selection is not None:

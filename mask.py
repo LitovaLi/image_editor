@@ -2,35 +2,41 @@ import tkinter
 from tkinter import *
 from PIL import Image, ImageGrab, ImageTk
 import os.path
+from tkinter import messagebox as mb
 
 class Paint(object):
 
     DEFAULT_PEN_SIZE = 5.0
     DEFAULT_COLOR = 'white'
 
-    def __init__(self, temp_dir):
+    def __init__(self, temp_dir, image_path):
         self.root = tkinter.Toplevel()
-        frame = Frame(self.root)
-        frame.grid()
+        self.root.title("Создание маски")
         self.temp_dir = temp_dir
 
-        self.pen_button = Button(frame, text='Карандаш', command=self.use_pen)
+        self.pen_button = Button(self.root, text='Карандаш', command=self.use_pen)
         self.pen_button.grid(row=0, column=0)
 
-        self.rectangle_button = Button(frame, text='Прямоугольник', command=self.use_rectangle)
+        self.rectangle_button = Button(self.root, text='Прямоугольник', command=self.use_rectangle)
         self.rectangle_button.grid(row=0, column=1)
 
-        self.save_button = Button(frame, text='Сохранить маску', command=self.save_mask)
-        self.save_button.grid(row=0, column=2)
+        self.color_button = Button(self.root, text='Белый/Черный', command=self.choose_color)
+        self.color_button.grid(row=0, column=2)
 
-        self.choose_size_button = Scale(frame, from_=1, to=10, orient=HORIZONTAL)
-        self.choose_size_button.grid(row=0, column=4)
+        self.save_button = Button(self.root, text='Сохранить маску', command=self.use_save_button)
+        self.save_button.grid(row=0, column=4)
 
-        image = Image.open("images/bird_impaint2.jpg")
-        photo = ImageTk.PhotoImage(image)
-        self.c = Canvas(frame, bg="white", width=photo.width(), height=photo.height())
-        self.c.create_image(0, 0, anchor='nw', image=photo)
-        self.c.grid(row=1, columnspan=5)
+        self.choose_size_button = Scale(self.root, from_=1, to=10, orient=HORIZONTAL)
+        self.choose_size_button.grid(row=0, column=5)
+
+        self.help_button = Button(self.root, text='Сохранить маску', command=self.use_save_button)
+        self.choose_size_button.grid(row=0, column=5)
+
+        self.image = Image.open(image_path)
+        self.photo = ImageTk.PhotoImage(self.image)
+        self.c = Canvas(self.root, bg="white", width=self.photo.width(), height=self.photo.height(), borderwidth=0)
+        self.c.create_image(0, 0, anchor='nw', image=self.photo)
+        self.c.grid(row=1, columnspan=6)
 
         self.setup()
         self.root.mainloop()
@@ -64,8 +70,19 @@ class Paint(object):
         self.c.bind("<B1-Motion>", self.on_move_press)
         self.c.bind("<ButtonRelease-1>", self.on_button_release)
 
+    def choose_color(self):
+        #Simulate pushing the button
+        self.color_button.config(relief=SUNKEN)
+        self.color_button.after(200, lambda: self.color_button.config(relief=RAISED))
+        if self.color == 'white':
+            self.color = 'black'
+        else:
+            self.color = 'white'
+
     def use_save_button(self):
-        self.activate_button(self.save_button)
+        self.save_button.config(relief=SUNKEN)
+        self.save_button.after(200, lambda: self.save_button.config(relief=RAISED))
+        self.save_mask()
 
     def activate_button(self, some_button):
         self.active_button.config(relief=RAISED)
@@ -107,9 +124,11 @@ class Paint(object):
         ImageGrab.grab(bbox=(
             self.c.winfo_rootx(),
             self.c.winfo_rooty(),
-            self.c.winfo_rootx() + self.c.winfo_width(),
-            self.c.winfo_rooty() + self.c.winfo_height()
+            self.c.winfo_rootx() + self.photo.width(),
+            self.c.winfo_rooty() + self.photo.height(),
         )).save(os.path.join(self.temp_dir, "mask.jpg"))
+        mb.showinfo("Сохранение", "Маска успешно сохранена")
+        self.root.destroy()
 
     def _close(self):
         self.root.quit()
