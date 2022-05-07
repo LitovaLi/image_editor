@@ -9,10 +9,11 @@ class Paint(object):
     DEFAULT_PEN_SIZE = 5.0
     DEFAULT_COLOR = 'white'
 
-    def __init__(self, temp_dir, image_path):
+    def __init__(self, temp_dir, image, id_temp):
         self.root = tkinter.Toplevel()
         self.root.title("Создание маски")
         self.temp_dir = temp_dir
+        self.id_temp = id_temp
 
         self.pen_button = Button(self.root, text='Карандаш', command=self.use_pen)
         self.pen_button.grid(row=0, column=0)
@@ -26,17 +27,19 @@ class Paint(object):
         self.save_button = Button(self.root, text='Сохранить маску', command=self.use_save_button)
         self.save_button.grid(row=0, column=4)
 
-        self.choose_size_button = Scale(self.root, from_=1, to=10, orient=HORIZONTAL)
-        self.choose_size_button.grid(row=0, column=5)
+        self.help = Label(self.root, text="Объекты для удаления закрасьте белым \n"
+                                          "Остальные светлые участки - черным")
+        self.help.grid(row=0, column=6)
 
-        self.help_button = Button(self.root, text='Сохранить маску', command=self.use_save_button)
-        self.choose_size_button.grid(row=0, column=5)
+        self.choose_size_button = Scale(self.root, from_=1, to=20, orient=HORIZONTAL)
+        self.choose_size_button.grid(row=0, column=7)
 
-        self.image = Image.open(image_path)
+        # self.image = Image.open(image_path)
+        self.image = Image.fromarray(image)
         self.photo = ImageTk.PhotoImage(self.image)
         self.c = Canvas(self.root, bg="white", width=self.photo.width(), height=self.photo.height(), borderwidth=0)
         self.c.create_image(0, 0, anchor='nw', image=self.photo)
-        self.c.grid(row=1, columnspan=6)
+        self.c.grid(row=1, columnspan=8)
 
         self.setup()
         self.root.mainloop()
@@ -89,6 +92,12 @@ class Paint(object):
         some_button.config(relief=SUNKEN)
         self.active_button = some_button
 
+    def use_help_button(self):
+        self.help_button.config(relief=SUNKEN)
+        self.help_button.after(200, lambda: self.help_button.config(relief=RAISED))
+        mb.showinfo("Информация", "Объекты, которые хотите удалить, закрасьте белым цветом. \n"
+                                  "Все светлые участки на изображении закрасьте черным")
+
     def paint(self, event):
         self.line_width = self.choose_size_button.get()
         if self.old_x and self.old_y:
@@ -126,7 +135,7 @@ class Paint(object):
             self.c.winfo_rooty(),
             self.c.winfo_rootx() + self.photo.width(),
             self.c.winfo_rooty() + self.photo.height(),
-        )).save(os.path.join(self.temp_dir, "mask.jpg"))
+        )).save(os.path.join(self.temp_dir, self.id_temp + "_mask.jpg"))
         mb.showinfo("Сохранение", "Маска успешно сохранена")
         self.root.destroy()
 

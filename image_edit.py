@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from coordinates import Rect
 import os
+from mask import Paint
+
 
 
 class ImageEdit:
@@ -75,9 +77,6 @@ class ImageEdit:
         self.image = cv2.flip(self.image, mode)
 
     def filter(self, mode):
-        if mode == "gray":
-            self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
-
         if mode == "pencil":
             img_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
             img_blur = cv2.GaussianBlur(img_gray, (21, 21), 0, 0)
@@ -105,9 +104,13 @@ class ImageEdit:
             gaus_blur = cv2.GaussianBlur(self.image, (5, 5), 0)
             self.image = gaus_blur
 
-    def inpaint(self, temp_dir):
-        mask = cv2.imread(os.path.join(temp_dir, "mask.jpg"), 0)
-        image = cv2.inpaint(self.image, mask, 10, cv2.INPAINT_TELEA)
+    def paint_mask(self, temp_dir, id_temp):
+        Paint(temp_dir, self.image, id_temp)
+
+    def inpaint(self, temp_dir, id_temp):
+        mask = cv2.imread(os.path.join(temp_dir, id_temp + "_mask.jpg"), 0)
+        # image = cv2.inpaint(self.image, mask, 10, cv2.INPAINT_TELEA)
+        image = cv2.inpaint(self.image, mask, 5, cv2.INPAINT_NS)
         self.image = image
 
     def start_crop_sel(self):

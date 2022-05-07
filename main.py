@@ -11,8 +11,6 @@ from optional_pane import EnhanceSliderWindow
 import tempfile
 import shutil
 import random
-from mask import Paint
-
 
 CONFIG_FILE = "config.json"
 
@@ -113,7 +111,6 @@ class PyPhotoEditor:
         enhance_menu.add_command(label="Размытость", command=lambda: self.filter_current_image("blur"))
 
         filter_menu = Menu(enhance_menu, tearoff=0)
-        filter_menu.add_command(label="Черно-белая пленка", command=lambda: self.filter_current_image("gray"))
         filter_menu.add_command(label="Карандашный эскиз", command=lambda: self.filter_current_image("pencil"))
         filter_menu.add_command(label="Масляная краска", command=lambda: self.filter_current_image("oil_painting"))
         filter_menu.add_command(label="Акварельная краска", command=lambda: self.filter_current_image("water_color"))
@@ -219,7 +216,7 @@ class PyPhotoEditor:
         image.save()
         self.image_tabs.add(image.tab, text=image.filename())
 
-    def save_temp_image(self):
+    def create_id_temp(self):
         image = self.current_image()
         if not image:
             return
@@ -232,6 +229,13 @@ class PyPhotoEditor:
                     break
                 else:
                     name_temp = str(random.randint(111111111, 999999999))
+
+    def save_temp_image(self):
+        image = self.current_image()
+        if not image:
+            return
+        if image not in self.temp_images:
+            self.create_id_temp()
         image.save_temp_file(self.path_temp_image(image))
 
     def save_image_as(self):
@@ -382,27 +386,37 @@ class PyPhotoEditor:
         image = self.current_image()
         if not image:
             return
-        # mb.showinfo("Информация", "Объекты, которые хотите удалить, закрасьте белым цветом. Все светлые участки на изображении закрасьте черным")
-        Paint(self.temp_dir, image.full_path(no_star=True))
+        if image not in self.temp_images:
+            self.create_id_temp()
+        image.paint_mask(self.temp_dir, self.temp_images[image])
 
     def create_mask(self):
-        pre_mask = cv2.imread(os.path.join(self.temp_dir, "mask.jpg"), cv2.IMREAD_COLOR)
+        image = self.current_image()
+        if not image:
+            return
+        pre_mask = cv2.imread(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.jpg"), cv2.IMREAD_COLOR)
         im_gray = cv2.cvtColor(pre_mask, cv2.COLOR_BGR2GRAY)
         _, pre_mask = cv2.threshold(im_gray, thresh=180, maxval=255, type=cv2.THRESH_BINARY)
         mask = cv2.bitwise_and(im_gray, pre_mask)
-        cv2.imwrite(os.path.join(self.temp_dir, "mask.jpg"), mask)
+        cv2.imwrite(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.jpg"), mask)
 
     def inpaint_current_image(self):
-        if os.path.exists(os.path.join(self.temp_dir, "mask.jpg")):
+        image = self.current_image()
+        if not image:
+            return
+        if image not in self.temp_images:
+            mb.showerror("Ошибка операции", "Маска для изображения не найдена")
+            return
+        if os.path.exists(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.jpg")):
             self.create_mask()
-            image = self.current_image()
-            if not image:
-                return
             self.save_temp_image()
-            image.inpaint(self.temp_dir)
-            image.unsaved = True
-            self.update_image_inside_app(image)
-            image.delete_temp_file(os.path.join(self.temp_dir, "mask.jpg"))
+            try:
+                image.inpaint(self.temp_dir, self.temp_images[image])
+                image.unsaved = True
+                self.update_image_inside_app(image)
+                image.delete_temp_file(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.jpg"))
+            except Exception as e:
+                mb.showerror("Ошибка операции", str(e))
         else:
             mb.showerror("Ошибка операции", "Маска для изображения не найдена")
 
