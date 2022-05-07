@@ -129,13 +129,13 @@ class Paint(object):
     def reset(self, event):
         self.old_x, self.old_y = None, None
 
-    def save_mask(self):
+    def save_mask(self):        
         ImageGrab.grab(bbox=(
             self.c.winfo_rootx(),
             self.c.winfo_rooty(),
             self.c.winfo_rootx() + self.photo.width(),
             self.c.winfo_rooty() + self.photo.height(),
-        )).save(os.path.join(self.temp_dir, self.id_temp + "_mask.jpg"))
+        )).save(os.path.join(self.temp_dir, self.id_temp + "_mask.png"))
         mb.showinfo("Сохранение", "Маска успешно сохранена")
         self.root.destroy()
 

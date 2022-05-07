@@ -108,7 +108,7 @@ class ImageEdit:
         Paint(temp_dir, self.image, id_temp)
 
     def inpaint(self, temp_dir, id_temp):
-        mask = cv2.imread(os.path.join(temp_dir, id_temp + "_mask.jpg"), 0)
+        mask = cv2.imread(os.path.join(temp_dir, id_temp + "_mask.png"), 0)
         # image = cv2.inpaint(self.image, mask, 10, cv2.INPAINT_TELEA)
         image = cv2.inpaint(self.image, mask, 5, cv2.INPAINT_NS)
         self.image = image

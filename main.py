@@ -147,7 +147,9 @@ class PyPhotoEditor:
             self.add_new_image(path)
 
     def open_new_images(self):
-        image_paths = fd.askopenfilenames(filetypes=(("Images", "*.jpeg; *.jpg; *.png"), ))
+        image_paths = fd.askopenfilenames()
+
+#        image_paths = fd.askopenfilenames(filetypes=(("Images", "*.jpeg; *.jpg; *.png"), ))
         if not image_paths:
             return
         for image_path in image_paths:
@@ -394,11 +396,11 @@ class PyPhotoEditor:
         image = self.current_image()
         if not image:
             return
-        pre_mask = cv2.imread(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.jpg"), cv2.IMREAD_COLOR)
+        pre_mask = cv2.imread(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.png"), cv2.IMREAD_COLOR)
         im_gray = cv2.cvtColor(pre_mask, cv2.COLOR_BGR2GRAY)
         _, pre_mask = cv2.threshold(im_gray, thresh=180, maxval=255, type=cv2.THRESH_BINARY)
         mask = cv2.bitwise_and(im_gray, pre_mask)
-        cv2.imwrite(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.jpg"), mask)
+        cv2.imwrite(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.png"), mask)
 
     def inpaint_current_image(self):
         image = self.current_image()
@@ -407,14 +409,14 @@ class PyPhotoEditor:
         if image not in self.temp_images:
             mb.showerror("Ошибка операции", "Маска для изображения не найдена")
             return
-        if os.path.exists(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.jpg")):
+        if os.path.exists(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.png")):
             self.create_mask()
             self.save_temp_image()
             try:
                 image.inpaint(self.temp_dir, self.temp_images[image])
                 image.unsaved = True
                 self.update_image_inside_app(image)
-                image.delete_temp_file(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.jpg"))
+                image.delete_temp_file(os.path.join(self.temp_dir, self.temp_images[image] + "_mask.png"))
             except Exception as e:
                 mb.showerror("Ошибка операции", str(e))
         else:
